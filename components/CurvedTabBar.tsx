@@ -14,16 +14,16 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const { width: SCREEN_WIDTH } = useWindowDimensions();
-    const CONTAINER_WIDTH = SCREEN_WIDTH - MARGIN * 2;
+    const CONTAINER_WIDTH = Math.max(0, SCREEN_WIDTH - MARGIN * 2);
 
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
 
     // Professional Color Palette
-    const activeColor = '#3b82f6'; // Professional Blue
+    const activeColor = '#fbbf24'; // Gold/Yellow for contrast
     const inactiveColor = '#94a3b8'; // Slate 400
-    const barBgColor = '#ffffff';
-    const screenBgColor = '#020617'; // Midnight Slate
+    const barBgColor = '#1e293b'; // Dark Slate
+    const screenBgColor = '#ffffff'; // White background
 
     const numTabs = state.routes.length;
     const TAB_WIDTH = CONTAINER_WIDTH / numTabs;

@@ -23,7 +23,7 @@ export default function TabTwoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#020617',
+    backgroundColor: '#ffffff',
   },
   content: {
     padding: 20,
@@ -31,21 +31,21 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: '900',
     marginBottom: 20,
-    color: '#d32f2f',
+    color: '#ef4444', // Brighter Red
   },
   text: {
     fontSize: 18,
     lineHeight: 28,
     marginBottom: 15,
-    color: '#333',
+    color: '#334155', // Dark Slate
   },
   footer: {
     fontSize: 22,
     fontWeight: 'bold',
     marginTop: 30,
-    color: '#388e3c',
+    color: '#16a34a', // Darker Green for white bg
     textAlign: 'center',
   },
 });

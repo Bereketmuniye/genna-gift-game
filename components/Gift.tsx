@@ -1,14 +1,14 @@
 import { GameItem } from '@/constants/GameConfig';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+    cancelAnimation,
     Easing,
     Extrapolate,
-    SharedValue,
-    cancelAnimation,
     interpolate,
     runOnJS,
+    SharedValue,
     useAnimatedReaction,
     useAnimatedStyle,
     useSharedValue,
@@ -41,7 +41,20 @@ export const Gift = React.memo(({ id, item, speed, basketX, isGameOver, isPaused
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
     const isActive = useSharedValue(true);
+
+    // Shared values for the floating point animation
+    const bonusOpacity = useSharedValue(0);
+    const bonusTranslateY = useSharedValue(0);
+
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const showPoints = () => {
+        'worklet';
+        bonusOpacity.value = 1;
+        bonusTranslateY.value = 0;
+        bonusTranslateY.value = withTiming(-80, { duration: 800 });
+        bonusOpacity.value = withTiming(0, { duration: 800 });
+    };
 
     const startFalling = useCallback(() => {
         if (isGameOver || isPaused) return;
@@ -51,20 +64,21 @@ export const Gift = React.memo(({ id, item, speed, basketX, isGameOver, isPaused
         scale.value = 1;
         opacity.value = 1;
         isActive.value = true;
+        bonusOpacity.value = 0;
+        bonusTranslateY.value = 0;
 
         translateY.value = withTiming(GAME_HEIGHT + 100, { duration: speed, easing: Easing.linear }, (finished) => {
             if (finished && isActive.value) {
                 runOnJS(onMissed)(item);
             }
         });
-    }, [isGameOver, isPaused, speed, item, onMissed]);
+    }, [isGameOver, isPaused, speed, item, onMissed, GAME_HEIGHT, width]);
 
     useEffect(() => {
         if (isGameOver || isPaused) {
             cancelAnimation(translateY);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         } else {
-            // Add a random delay to prevent synchronized "bombardment"
             const delay = Math.random() * 2000;
             timeoutRef.current = setTimeout(startFalling, delay);
         }
@@ -87,25 +101,19 @@ export const Gift = React.memo(({ id, item, speed, basketX, isGameOver, isPaused
                     cancelAnimation(translateY);
                     scale.value = withTiming(1.5, { duration: 100 });
                     opacity.value = withTiming(0, { duration: 100 });
+                    showPoints();
                     runOnJS(onCaught)(item);
                 }
             }
         }
     );
 
-    const bonusOpacity = useSharedValue(0);
-    const bonusTranslateY = useSharedValue(0);
-
     const tap = Gesture.Tap().onEnd(() => {
         if (isActive.value && !isPaused && !isGameOver) {
             isActive.value = false;
             cancelAnimation(translateY);
 
-            // Show Bonus Text
-            bonusOpacity.value = 1;
-            bonusTranslateY.value = 0;
-            bonusTranslateY.value = withTiming(-50, { duration: 500 });
-            bonusOpacity.value = withTiming(0, { duration: 500 });
+            showPoints();
 
             scale.value = withTiming(2, { duration: 150 });
             opacity.value = withTiming(0, { duration: 150 });
@@ -118,6 +126,12 @@ export const Gift = React.memo(({ id, item, speed, basketX, isGameOver, isPaused
         transform: [{ translateY: bonusTranslateY.value }],
         position: 'absolute',
         top: -20,
+        zIndex: 100,
+    }));
+
+    const giftBodyStyle = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+        transform: [{ scale: scale.value }],
     }));
 
     const style = useAnimatedStyle(() => {
@@ -132,10 +146,8 @@ export const Gift = React.memo(({ id, item, speed, basketX, isGameOver, isPaused
             transform: [
                 { translateX: translateX.value },
                 { translateY: translateY.value },
-                { scale: scale.value },
                 { rotate: `${rotate}deg` }
             ],
-            opacity: opacity.value,
         };
     });
 
@@ -143,10 +155,11 @@ export const Gift = React.memo(({ id, item, speed, basketX, isGameOver, isPaused
         <GestureDetector gesture={tap}>
             <Animated.View style={[styles.gift, style]}>
                 <Animated.View style={bonusStyle}>
-                    <Text style={styles.bonusText}>BONUS!</Text>
+                    <Text style={styles.bonusText}>+{item.score}</Text>
                 </Animated.View>
-                <View style={[
+                <Animated.View style={[
                     styles.itemContainer,
+                    giftBodyStyle,
                     item.type === 'obstacle' && styles.obstacleGlow,
                     item.type === 'life' && styles.lifeGlow,
                     item.type === 'gift' && item.score > 10 && styles.rareGlow,
@@ -154,7 +167,7 @@ export const Gift = React.memo(({ id, item, speed, basketX, isGameOver, isPaused
                     (item.emoji === '🥘' || item.emoji === '🧺') && styles.rareGlow
                 ]}>
                     <Text style={styles.giftText}>{item.emoji}</Text>
-                </View>
+                </Animated.View>
             </Animated.View>
         </GestureDetector>
     );
@@ -174,7 +187,7 @@ const styles = StyleSheet.create({
         color: '#fbbf24',
         fontSize: 16,
         fontWeight: '900',
-        // @ts-ignore - textShadow is the new standard for web
+        // @ts-ignore
         textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
     },
     itemContainer: {

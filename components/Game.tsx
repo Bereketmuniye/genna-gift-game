@@ -1,7 +1,7 @@
 import { GameItem, LEVELS } from '@/constants/GameConfig';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -67,10 +67,6 @@ export default function Game() {
             withTiming(-10, { duration: 50 }),
             withTiming(10, { duration: 50 }),
             withTiming(0, { duration: 50 })
-        );
-        flashOpacity.value = withSequence(
-            withTiming(0.3, { duration: 100 }),
-            withTiming(0, { duration: 200 })
         );
     };
 
@@ -144,9 +140,8 @@ export default function Game() {
                 return newCombo;
             });
             setScore((s) => {
-                // Bonus for tapping: Double points + combo multiplier!
                 const multiplier = Math.floor(combo / 5) + 1;
-                const newScore = s + (item.score * 2 * multiplier);
+                const newScore = s + (item.score * multiplier);
                 if (newScore >= currentLevel.targetScore) {
                     if (levelIndex === LEVELS.length - 1) {
                         setGameState('win');
@@ -284,33 +279,17 @@ export default function Game() {
                             id={slot.id}
                             item={slot.item}
                             speed={slot.speed}
-                            basketX={basketX}
-                            isDesktop={isDesktop}
-                            onCaught={(item: GameItem) => handleSlotFinished(index, 'caught', item)}
+                            isDesktop={true}
+                            onCaught={(item: GameItem) => handleSlotFinished(index, 'tapped', item)}
                             onTapped={(item: GameItem) => handleSlotFinished(index, 'tapped', item)}
                             onMissed={(item: GameItem) => handleSlotFinished(index, 'missed', item)}
                             isGameOver={gameState === 'gameover'}
                             isPaused={gameState !== 'playing'}
                         />
                     ))}
-
-                    {!isDesktop && (
-                        <GestureDetector gesture={pan}>
-                            <Animated.View style={[styles.basket, basketStyle]}>
-                                <View style={styles.agelgilContainer}>
-                                    {isShielded && <View style={styles.shieldEffect} />}
-                                    <View style={styles.agelgilTop} />
-                                    <View style={styles.agelgilBody}>
-                                        <Text style={styles.basketText}>🧺</Text>
-                                    </View>
-                                    <View style={styles.agelgilStrap} />
-                                </View>
-                            </Animated.View>
-                        </GestureDetector>
-                    )}
                 </View>
 
-                <Animated.View style={[styles.flash, flashStyle]} pointerEvents="none" />
+
 
                 {(gameState === 'levelup' || gameState === 'win') && <Confetti />}
 
@@ -391,14 +370,14 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     levelLabel: {
-        color: 'rgba(255,255,255,0.6)',
+        color: '#475569', // Dark Slate
         fontSize: 12,
         fontWeight: '900',
-        letterSpacing: 2,
+        letterSpacing: 1,
     },
     levelValue: {
-        color: '#fff',
-        fontSize: 32,
+        color: '#0f172a', // Midnight
+        fontSize: 24,
         fontWeight: '900',
     },
     livesContainer: {
@@ -414,24 +393,29 @@ const styles = StyleSheet.create({
     } as any,
     scoreContainer: {
         alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        padding: 15,
+        borderRadius: 20,
+        minWidth: 150,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.1)',
     },
     scoreLabel: {
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: 14,
+        color: '#475569',
+        fontSize: 12,
         fontWeight: '900',
-        letterSpacing: 4,
+        letterSpacing: 1,
     },
     scoreValue: {
-        color: '#fff',
-        fontSize: 56,
+        color: '#0f172a',
+        fontSize: 36,
         fontWeight: '900',
-        marginVertical: -5,
     },
     targetText: {
-        color: 'rgba(255,255,255,0.4)',
+        color: '#059669', // Green
         fontSize: 12,
         fontWeight: '700',
-        marginTop: 4,
+        marginTop: 5,
     },
     comboBadge: {
         backgroundColor: '#fbbf24',
@@ -461,9 +445,8 @@ const styles = StyleSheet.create({
     },
     powerupIcon: {
         fontSize: 24,
-        textShadowColor: 'rgba(255,255,255,0.5)',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 10,
+        // @ts-ignore
+        textShadow: '0px 0px 10px rgba(255,255,255,0.5)',
     },
     shieldEffect: {
         position: 'absolute',
@@ -488,6 +471,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         height: 6,
         width: '100%',
+        opacity: 0.8,
         position: 'absolute',
         top: 0,
     },
@@ -512,10 +496,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         overflow: 'hidden',
         elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
+        // @ts-ignore
+        boxShadow: '0px 2px 4px rgba(0,0,0,0.3)',
     },
     agelgilTop: {
         width: BASKET_WIDTH - 20,
